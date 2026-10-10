@@ -13,6 +13,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol
 
+from tqdm.auto import tqdm
+
 from .cwe_mapping import coarse_labels, load_mapping
 from .primevul import PrimeVulSample, load_primevul, split_train_calibration
 from .scale_transformer import ScaleTransformer
@@ -161,7 +163,7 @@ def prepare_scale_records(
     temporary = output.with_suffix(output.suffix + ".tmp")
     completed = failed = 0
     with ScaleCache(cache_path) as cache, temporary.open("w", encoding="utf-8") as stream:
-        for sample in samples:
+        for sample in tqdm(samples, desc="SCALE conversion", unit="sample"):
             cache_key = f"{CACHE_VERSION}:{sample.function_hash}"
             cached = cache.get(cache_key)
             if cached is None:
@@ -226,6 +228,12 @@ def embed_records_resumable(
         raise ValueError("existing embedding checkpoint belongs to different records or model")
     completed = int(state["completed"]) if state else 0
     matrix = None
+    progress = tqdm(
+        total=len(records),
+        initial=completed,
+        desc="UniXcoder embedding",
+        unit="sample",
+    )
     for start in range(completed, len(records), batch_size):
         batch = records[start : start + batch_size]
         vectors = embedder.encode([record.scale_text for record in batch], batch_size)
@@ -243,11 +251,13 @@ def embed_records_resumable(
         matrix[start : start + len(batch)] = vectors
         matrix.flush()
         completed = start + len(batch)
+        progress.update(len(batch))
         _atomic_json(state_path, {
             "fingerprint": fingerprint, "model": embedder.model_name,
             "completed": completed, "records": len(records),
             "dimension": int(vectors.shape[1]),
         })
+    progress.close()
     return vector_path
 
 
@@ -277,7 +287,9 @@ def build_faiss_indices(
             if record.target == 1 and category in record.categories
         ]
     sizes: dict[str, int] = {}
-    for name, ids in partitions.items():
+    for name, ids in tqdm(
+        partitions.items(), desc="FAISS partitions", unit="index"
+    ):
         if not ids:
             continue
         subset = np.asarray(vectors[ids], dtype="float32")

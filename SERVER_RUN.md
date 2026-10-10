@@ -47,6 +47,10 @@ On GPU memory errors, lower `--batch-size` to 8, 4, or 2. On a CPU-only host,
 `--device auto` uses CPU. Re-running the same command resumes SCALE conversion
 from SQLite and UniXcoder embedding from `embedding_state.json`.
 
+The command displays separate progress bars for SCALE conversion, UniXcoder
+embedding, and FAISS partition construction. When redirected to a log, use
+`tail -f artifacts/knowledge_base_build.log` to follow them.
+
 ## 4. Expected artifacts
 
 - `records.jsonl`: SCALE representations and labels
