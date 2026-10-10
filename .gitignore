@@ -1,0 +1,13 @@
+.env
+.pytest_cache/
+.cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+artifacts/
+tmp/
+data/cwe/
+third_party/Comment4Vul/
+
