@@ -7,6 +7,8 @@ from pathlib import Path
 
 # ==================== 配置 ====================
 
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
 MODEL_ID = "BAAI/bge-m3"
 
 # 下载到当前项目下的 models/bge-m3
@@ -16,7 +18,6 @@ MODEL_DIR = PROJECT_ROOT / "models" / "bge-m3"
 # 优先官方地址，失败后尝试镜像
 ENDPOINTS = [
     "https://huggingface.co",
-    "https://hf-mirror.com",
 ]
 
 MAX_RETRIES = 3
